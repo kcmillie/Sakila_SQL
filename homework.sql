@@ -101,6 +101,144 @@ CREATE TABLE `address` (
   CONSTRAINT `fk_address_city` FOREIGN KEY (`city_id`) REFERENCES `city` (`city_id`) ON UPDATE CASCADE
 ) ENGINE=InnoDB AUTO_INCREMENT=606 DEFAULT CHARSET=utf8;
 
+-- 6a. Use JOIN to display the first and last names, as well as the address, of each staff member. Use the tables staff and address:
+SELECT first_name, last_name, address
+FROM staff as s
+JOIN address as a
+ON (s.address_id = a.address_id);
+
+-- 6b. Use JOIN to display the total amount rung up by each staff member in August of 2005. Use tables staff and payment.
+SELECT first_name, last_name, sum(amount) as total_amount
+FROM staff as s
+JOIN payment as p
+ON (s.staff_id = p.staff_id)
+GROUP BY first_name, last_name;
+
+-- 6c. List each film and the number of actors who are listed for that film. Use tables film_actor and film. Use inner join.
+SELECT title, count(actor_id)
+FROM film AS f
+INNER JOIN film_actor AS fa
+ON f.film_id = fa.film_id
+GROUP BY title;
+
+-- 6d. How many copies of the film Hunchback Impossible exist in the inventory system?
+SELECT title, count(title)
+FROM film AS f
+JOIN inventory AS i
+ON (f.film_id = i.film_id)
+WHERE title = 'Hunchback Impossible';
+
+-- 6e. Using the tables payment and customer and the JOIN command, list the total paid by each customer.
+-- List the customers alphabetically by last name:
+SELECT first_name, last_name, sum(amount) as 'total_paid'
+FROM customer AS c
+JOIN payment AS p
+ON (c.customer_id = p.customer_id)
+GROUP BY first_name, last_name;
+
+ -- 7a. The music of Queen and Kris Kristofferson have seen an unlikely resurgence. As an unintended consequence,
+ -- films starting with the letters K and Q have also soared in popularity. Use subqueries to display the titles of movies
+ -- starting with the letters K and Q whose language is English.
+
+SELECT title
+FROM film AS f
+JOIN language AS l
+ON (f.language_id = l.language_id)
+WHERE (title LIKE 'K%' OR title LIKE 'Q%')
+AND name = 'English';
+
+-- 7b. Use subqueries to display all actors who appear in the film Alone Trip.
+SELECT first_name, last_name
+FROM actor AS a
+JOIN (
+    SELECT actor_id
+    FROM film as f
+    JOIN film_actor AS fa
+    ON(f.film_id = fa.film_id)
+    WHERE title = 'Alone Trip'
+) AS B
+ON (a.actor_id = B.actor_id);
+
+-- 7c. You want to run an email marketing campaign in Canada, for which you will need the names
+-- and email addresses of all Canadian customers. Use joins to retrieve this information.
+SELECT first_name, last_name, email
+FROM customer AS cu
+JOIN (
+    SELECT address_id
+    from address as a
+    JOIN (
+        SELECT city_id
+        FROM city AS ci
+        JOIN (
+            SELECT country_id
+            FROM country
+            WHERE country = 'Canada'
+        ) AS co
+    ON (ci.country_id = co.country_id)
+    ) as cid
+    ON a.city_id = cid.city_id
+)
+AS co
+ON cu.address_id = co.address_id;
+
+ -- 7d. Sales have been lagging among young families, and you wish to target all family movies for a promotion.
+-- Identify all movies categorized as famiy films.
+
+select title
+from film as f
+join(
+    select film_id
+    from film_category as fc
+    join (
+        select category_id
+        from category
+        where name = 'Family'
+    ) as c
+    on fc.category_id = c.category_id
+) as fid
+ON f.film_id = fid.film_id;
+
+-- 7e. Display the most frequently rented movies in descending order.
+
+select title, total_rented
+from film as f
+join (
+    select film_id, count(film_id) as total_rented
+    from rental as r
+    join inventory as i
+    on (r.inventory_id = i.inventory_id)
+    group by film_id
+) as r
+on (f.film_id = r.film_id)
+order by total_rented desc;
+
+-- 7f. Write a query to display how much business, in dollars, each store brought in.
+
+select store_id, concat('$', format(total_business, 2))
+from staff as s
+join (
+    select staff_id, sum(amount) as total_business
+    from payment
+    group by staff_id
+) as p
+on s.staff_id = p.staff_id;
+
+-- 7g. Write a query to display for each store its store ID, city, and country.
+select store_id, city, country
+from store as s
+join (
+    select address_id, city, country
+    from address as a
+    join (
+        select city_id, city, country
+        from city as ci
+        join country as co
+        on ci.country_id = co.country_id
+    ) as c
+    on a.city_id = c.city_id
+) as c
+on s.address_id = c.address_id;
+
 
 
 
